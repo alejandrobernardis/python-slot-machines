@@ -52,3 +52,8 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# Project
+.DS_Store
+.idea/
+src/backend/OLD/

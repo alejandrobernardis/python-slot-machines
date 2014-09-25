@@ -1,0 +1,164 @@
+#!/usr/bin/env python2.7
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014 Asumi Kamikaze Inc.
+# Licensed under the MIT License.
+# Author: Alejandro M. Bernardis
+# Email: alejandro (dot) bernardis (at) asumikamikaze (dot) com
+# Created: 23/Sep/2014 6:08 AM
+
+import copy
+from backend.common.errors import ConfigurationError
+from backend.common.storage import KeyValueClientFactory
+from functools import wraps
+
+__all__ = (
+    'verify_key',
+    'verify_key_type',
+    'Session',
+    'SessionMixin',
+    'SESSION_EXPIRE'
+)
+
+
+SESSION_EXPIRE = 60 * 20
+
+
+def verify_key(method):
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        if not self.has(args[0]):
+            raise KeyError('Key "%s" not found' % args[0])
+        return method(self, *args, **kwargs)
+    return wrapper
+
+
+def verify_key_type(method):
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        if not isinstance(args[0], (basestring, int,)):
+            raise TypeError('Invalid key, must be a basestring or integer')
+        return method(self, *args, **kwargs)
+    return wrapper
+
+
+def verify_value_type(method):
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        if not isinstance(args[0], dict):
+            raise TypeError('Invalid values, must be a dictionary')
+        keys = args[0].keys()
+        if not keys or not all(isinstance(i, (basestring, int)) for i in keys):
+            raise TypeError('Invalid key, must be a basestring or integer')
+        return method(self, *args, **kwargs)
+    return wrapper
+
+
+class Session(object):
+    def __init__(self, handler):
+        if not handler:
+            raise ConfigurationError('Handler is undefined')
+        elif not hasattr(handler, 'session_id'):
+            raise AttributeError(
+                'Handler does not define a "session_id" attribute')
+        self._handler = handler
+        if 'session' not in self._handler.settings:
+            raise ConfigurationError('Session is undefined')
+        self._settings = copy.deepcopy(self._handler.settings.get('session'))
+        if not self._settings:
+            raise ConfigurationError('Settings is empty')
+        self._client = KeyValueClientFactory.make(self._settings)
+
+    @property
+    def data(self):
+        return self._client.get(self.sid)
+
+    @property
+    def is_empty(self):
+        return not self.data
+
+    @property
+    def keys(self):
+        return self.data.keys()
+
+    @property
+    def sid(self):
+        return self._handler.session_id
+
+    @property
+    def time_expires(self):
+        return self._settings.get('expires', SESSION_EXPIRE)
+
+    @verify_key
+    def get(self, key, default=None):
+        return self.data.get(key, default)
+
+    def set(self, key, value, expires=None):
+        self.save({key: value}, expires)
+
+    def update(self, values, expires=None):
+        self.save(values, expires)
+
+    @verify_key
+    def delete(self, key, expires=None):
+        data = self.data
+        del data[key]
+        self.save(data, expires, True)
+
+    def expires(self, expires):
+        self.save(self.data, expires, True)
+
+    def clear(self, expires=None):
+        self.save({}, expires, True)
+
+    def revoke(self):
+        self._client.delete(self.sid)
+
+    @verify_key_type
+    def has(self, key):
+        return key in self.data
+    __contains__ = has
+
+    def save(self, value, expires=None, ignore_value=False):
+        self.force_save(value, self.sid, expires, ignore_value)
+
+    @verify_value_type
+    def force_save(self, value, sid, expires=None, ignore_value=False):
+        if not ignore_value:
+            data = self.data
+            data.update(copy.deepcopy(value))
+            value = data
+        self._client.save(sid, value, expires or self.time_expires)
+
+
+class SessionMixin(object):
+    def _session_maker(self):
+        key = '_session'
+        session = getattr(self, key, False)
+        if not isinstance(session, Session):
+            session = Session(self)
+            setattr(self, key, session)
+        return session
+
+    @property
+    def session(self):
+        return self._session_maker()
+
+    @property
+    def session_id(self):
+        raise NotImplementedError()
+
+    @property
+    def session_cookie_name(self):
+        raise NotImplementedError()
+
+    def session_start(self, data):
+        raise NotImplementedError()
+
+    def session_destroy(self):
+        raise NotImplementedError()
+
+    def session_validate(self):
+        raise NotImplementedError()
+
+    def session_verify(self):
+        raise NotImplementedError()

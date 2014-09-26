@@ -11,7 +11,7 @@ import settings
 from backend.common.errors import ConfigurationError
 from backend.common.storage import nosql_database_connector
 from backend.common.utils import import_by_path, import_module, verify_file, \
-    verify_folder_list
+    verify_folder
 from tornado.autoreload import watch as autoreload_watch, \
     start as autoreload_start
 from tornado.httpserver import HTTPServer
@@ -41,18 +41,12 @@ define('autoreload', default=settings.AUTORELOAD_ENABLED, type=bool)
 
 class MainApplication(Application):
     def __init__(self):
-        verify_folder_list(
-            settings.APP_PATH,
-            settings.CA_PATH,
-            settings.STATIC_PATH,
-            settings.TEMPLATES_PATH,
-            settings.TEMP_PATH
-        )
-
         for item in settings.AUTORELOAD_FILES:
             autoreload_watch(verify_file(item, settings.ROOT_PATH))
 
         _handlers = []
+
+        verify_folder(settings.STATIC_PATH)
 
         for item in settings.STATIC_FILES:
             verify_file(item, settings.STATIC_PATH)
@@ -95,13 +89,13 @@ class MainApplication(Application):
             'logout_url': settings.LOGOUT_URL,
             'domain': options.domain,
             'port': options.port,
-            'path': settings.APP_PATH,
+            'path': verify_folder(settings.APP_PATH),
             'root_path': settings.ROOT_PATH,
             'static_path': settings.STATIC_PATH,
-            'template_path': settings.TEMPLATES_PATH,
-            'temp_path': settings.TEMP_PATH,
-            'ca_path': settings.CA_PATH,
-            'locale_path': settings.LOCALE_PATH,
+            'template_path': verify_folder(settings.TEMPLATES_PATH),
+            'temp_path': verify_folder(settings.TEMP_PATH),
+            'ca_path': verify_folder(settings.CA_PATH),
+            'locale_path': verify_folder(settings.LOCALE_PATH),
             'locale_default': settings.LOCALE_DEFAULT,
             'locale_supported': settings.LOCALE_SUPPORTED,
             'ui_modules': _ui_modules,

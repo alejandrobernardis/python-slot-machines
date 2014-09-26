@@ -1,11 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
-# Copyright (c) 2013 Asumi Kamikaze Inc.
-# Copyright (c) 2013 The Octopus Apps Inc.
-# Licensed under the Apache License, Version 2.0 (the "License")
+# Copyright (c) 2014 Asumi Kamikaze Inc.
+# Licensed under the MIT License.
 # Author: Alejandro M. Bernardis
-# Email: alejandro.bernardis at gmail.com
-# Created: 12/Jun/2014 16:18
+# Email: alejandro (dot) bernardis (at) asumikamikaze (dot) com
+# Created: 25/Sep/2014 9:23 PM
 
 import os
 import shutil
@@ -22,7 +21,7 @@ setup(
     version="1.0.0.dev.0",
     packages = ["backend", "backend.games"],
     author="Alejandro M. Bernardis",
-    author_email="python-tornado@googlegroups.com",
+    author_email="alejandro (dot) bernardis (at) asumikamikaze (dot) com",
     url="http://https://github.com/alejandrobernardis/python-slot-machines/",
     license="https://raw.githubusercontent.com/alejandrobernardis"
             "/python-slot-machines/master/LICENSE",

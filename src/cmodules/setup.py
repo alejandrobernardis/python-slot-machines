@@ -18,6 +18,7 @@ if os.path.isdir(BUILD_PATH):
 
 setup(
     name="backend",
+    # TODO: *** Remember to change the version ***
     version="1.0.0.dev.0",
     packages = ["backend", "backend.games"],
     author="Alejandro M. Bernardis",

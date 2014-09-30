@@ -46,8 +46,6 @@ class MainApplication(Application):
 
         _handlers = []
 
-        verify_folder(settings.STATIC_PATH)
-
         for item in settings.STATIC_FILES:
             verify_file(item, settings.STATIC_PATH)
             _handlers.append((item, StaticFileHandler, {

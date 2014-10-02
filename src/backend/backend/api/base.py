@@ -101,7 +101,7 @@ class Paginator(object):
         return json.dumps(self.to_object())
 
 
-class AbstractBaseHandler(RequestHandler, SessionMixin):
+class BaseHandler(RequestHandler, SessionMixin):
     _form = None
     _template = None
     _db_name = 'default'
@@ -184,7 +184,7 @@ class AbstractBaseHandler(RequestHandler, SessionMixin):
     def render(self, template_name=None, **kwargs):
         if not template_name:
             template_name = self.template
-        super(AbstractBaseHandler, self).render(template_name, **kwargs)
+        super(BaseHandler, self).render(template_name, **kwargs)
 
     @property
     def remote_ip(self):
@@ -326,7 +326,7 @@ class AbstractBaseHandler(RequestHandler, SessionMixin):
         return self.settings.get('locale_default')
 
     def get_browser_locale(self, default=None):
-        return super(AbstractBaseHandler, self).get_browser_locale(
+        return super(BaseHandler, self).get_browser_locale(
             default or self.locale_default)
 
     def get_user_locale(self):

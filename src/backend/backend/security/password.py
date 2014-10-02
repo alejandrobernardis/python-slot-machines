@@ -7,16 +7,9 @@
 # Created: 24/Sep/2014 4:01 AM
 
 from functools import wraps
+from werkzeug.security import generate_password_hash
+from werkzeug.security import check_password_hash
 
-try:
-    from werkzeug.security import generate_password_hash
-except ImportError:
-    generate_password_hash = None
-
-try:
-    from werkzeug.security import check_password_hash
-except ImportError:
-    check_password_hash = None
 
 __all__ = (
     'validate_password',
@@ -51,16 +44,12 @@ class _PasswordHasher(object):
 
     @validate_password(MINIMUM_PASSWORD_LENGTH)
     def make(self, password, salt=None):
-        if not generate_password_hash:
-            raise ImportError('Function `generate_password_hash` not found')
         if not isinstance(salt, int):
             salt = 8
         return generate_password_hash(password, self._algorithm, salt)
 
     @validate_password(MINIMUM_PASSWORD_LENGTH)
     def verify(self, password, password_hash):
-        if not check_password_hash:
-            raise ImportError('Function `check_password_hash` not found')
         return check_password_hash(password, password_hash)
 
 

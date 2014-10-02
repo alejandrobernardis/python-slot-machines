@@ -6,15 +6,15 @@
 # Email: alejandro (dot) bernardis (at) asumikamikaze (dot) com
 # Created: 23/Sep/2014 7:33 AM
 
-from tornado.web import RequestHandler
+from backend.api.base import BaseHandler
 
 
-class MainHandler(RequestHandler):
+class MainHandler(BaseHandler):
     def get(self, *args, **kwargs):
-        self.finish('%s v%s' % (
-            self.settings.get('app_name'),
-            self.settings.get('app_version')
-        ))
+        self.get_json_response_and_finish({
+            'name': self.settings.get('app_name'),
+            'version': self.settings.get('app_version')
+        })
 
 
 handlers_list = [

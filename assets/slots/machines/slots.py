@@ -8,7 +8,7 @@
 # Created: 23/06/2013 02:51
 
 from array import array
-from  slots.machines.base import AbstractMachine
+from slots.machines.base import AbstractMachine
 
 
 class Slot100(AbstractMachine):

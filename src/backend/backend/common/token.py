@@ -62,16 +62,10 @@ def token_b64(length=32):
 def user_token(username):
     h = hashlib.sha256()
     h.update(username)
-    return h.hexdigest()[:8]
+    return h.hexdigest()
 
 
 def user_token_complex(username):
-    h = hashlib.sha256()
-    h.update(username)
-    h = '%s%s%s%s' % (
-        h.hexdigest(), string.ascii_letters, string.digits,
-        datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S%f'))
+    h = '%s+%s' % (user_token(username), _string_random_choice())
     h = ''.join([choice(h) for _ in xrange(256)])
-    r = hashlib.sha256()
-    r.update(h)
-    return r.hexdigest()[:8]
+    return user_token(h)[:8]

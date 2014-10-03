@@ -4,6 +4,9 @@
 # Licensed under the MIT License.
 # Author: Alejandro M. Bernardis
 # Email: alejandro (dot) bernardis (at) asumikamikaze (dot) com
-# Created: 01/Oct/2014 5:11 PM
+# Created: 02/Oct/2014 1:52 PM
 
-handlers_list = []
+
+class Roulette(object):
+    def spin(self, *args, **kwargs):
+        raise NotImplementedError()

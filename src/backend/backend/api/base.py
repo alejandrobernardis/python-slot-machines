@@ -18,6 +18,7 @@ from backend.tasks.tasks import push__track_activity
 from bson import json_util as json_mongo
 from functools import wraps
 from tornado.httputil import responses
+from tornado.escape import json_encode, json_decode
 from tornado.web import RequestHandler
 from wtforms_tornado.form import Form
 
@@ -238,10 +239,16 @@ class BaseHandler(RequestHandler, SessionMixin):
 
     # Response
 
-    def normalize_json_dump(self, value):
-        if not isinstance(value, basestring):
+    def get_json_body(self):
+        try:
+            return json_decode(self.request.body)
+        except:
+            return {}
+
+    def normalize_json_dump(self, value, default=complex_types):
+        if not isinstance(value, (basestring, unicode, type(None))):
             raise TypeError('Invalid type, must be a basestring.')
-        return value.replace("</", "<\\/")
+        return json.dumps(value, default=default).replace("</", "<\\/")
 
     def set_header_for_json(self):
         self.set_header('Content-Type', 'application/json; charset=utf-8')
@@ -260,31 +267,20 @@ class BaseHandler(RequestHandler, SessionMixin):
     def get_json_response(self, response=None, **kwargs):
         self.set_header_for_json()
         kwargs['response'] = response
-        return self.normalize_json_dump(
-            json.dumps(
-                self.get_object_response(**kwargs), default=complex_types
-            )
-        )
+        return self.normalize_json_dump(self.get_object_response(**kwargs))
 
     def get_json_response_and_finish(self, response=None, **kwargs):
         return self.finish(self.get_json_response(response, **kwargs))
 
     def get_json_obj_response_and_finish(self, value):
         self.set_header_for_json()
-        return self.finish(
-            self.normalize_json_dump(
-                json.dumps(value, default=complex_types)
-            )
-        )
+        return self.finish(self.normalize_json_dump(value))
 
     def get_json_mongo_response(self, cursor, **kwargs):
         self.set_header_for_json()
         kwargs['response'] = [document for document in cursor]
-        return self.normalize_json_dump(
-            json_mongo.dumps(
-                self.get_object_response(**kwargs)
-            )
-        )
+        return json_mongo.dumps(self.get_object_response(**kwargs))\
+                         .replace("</", "<\\/")
 
     def get_json_mongo_response_and_finish(self, cursor, **kwargs):
         return self.finish(self.get_json_mongo_response(cursor, **kwargs))
@@ -292,13 +288,14 @@ class BaseHandler(RequestHandler, SessionMixin):
     def get_json_mongo_obj_response_and_finish(self, cursor, **kwargs):
         self.set_header_for_json()
         kwargs['response'] = [document for document in cursor]
-        return self.finish(self.normalize_json_dump(json_mongo.dumps(**kwargs)))
+        return self.finish(json_mongo.dumps(**kwargs).replace("</", "<\\/"))
 
     def get_json_complex_response_and_finish(self, data, **kwargs):
         if hasattr(data, 'to_json'):
             self.set_header_for_json()
             response = self.get_json_response('-{data}-', **kwargs)
-            return self.finish(response.replace('"-{data}-"', data.to_json()))
+            data = data.to_json().replace("</", "<\\/")
+            return self.finish(response.replace('"-{data}-"', data))
         elif hasattr(data, 'to_python'):
             data = data.to_python()
         elif hasattr(data, 'to_mongo'):

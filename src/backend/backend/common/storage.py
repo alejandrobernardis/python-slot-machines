@@ -11,6 +11,7 @@ from backend.common.errors import ConfigurationError
 from backend.common.utils import purge_settings, import_module, \
     import_by_path, complex_types, deserialize_complex_types, \
     serialize_complex_types
+from functools import wraps
 from pymongo.common import validate
 from pymongo.mongo_client import MongoClient
 from pymongo.mongo_replica_set_client import MongoReplicaSetClient
@@ -22,6 +23,15 @@ __all__ = (
     'MemcachedClient',
     'nosql_database_connector'
 )
+
+
+def is_read_only(method):
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        if getattr(self, '_read_only', False):
+            raise NotImplementedError('This client is read only')
+        return method(self, *args, **kwargs)
+    return wrapper
 
 
 class KeyValueClient(object):
@@ -125,7 +135,7 @@ class MemcachedClient(KeyValueClient):
     def __init__(self, settings, serializer='pickle', read_only=False):
         if settings and 'engine' not in settings:
             settings['engine'] = 'memcached'
-        self.__read_only = read_only
+        self._read_only = read_only
         super(MemcachedClient, self).__init__(settings, serializer)
 
     def _make_engine(self, *args, **kwargs):
@@ -139,14 +149,12 @@ class MemcachedClient(KeyValueClient):
     def _get(self, key):
         return self._engine.get(key)
 
+    @is_read_only
     def _save(self, key, value, expires):
-        if self.__read_only:
-            raise NotImplementedError()
         self._engine.set(key, value, expires)
 
+    @is_read_only
     def delete(self, key):
-        if self.__read_only:
-            raise NotImplementedError()
         return self._engine.delete(key)
 
 

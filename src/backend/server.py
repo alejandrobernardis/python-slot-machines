@@ -101,7 +101,12 @@ class MainApplication(Application):
             'database': settings.DATABASE,
             'email': settings.EMAIL,
             'env': settings.ENV_STATUS,
-            'env_list': settings.ENV_LIST
+            'env_list': settings.ENV_LIST,
+            'api': settings.API,
+            'api_current': settings.API_CURRENT,
+            'api_available': settings.API_AVAILABLE,
+            'api_domain': settings.API_DOMAIN,
+            'api_port': settings.API_PORT,
         })
 
         self._db_cache = {}
@@ -157,7 +162,7 @@ if __name__ == '__main__':
     print 'Listening on http://%s:%s' % (options.domain, options.port)
     app = MainApplication()
     http_server = HTTPServer(app, xheaders=True, ssl_options=app.ssl_config)
-    if options.prefork_process > 1:
+    if options.prefork_process > -1:
         http_server.bind(options.port)
         http_server.start(options.prefork_process)
     else:

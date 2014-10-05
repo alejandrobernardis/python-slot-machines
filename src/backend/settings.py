@@ -35,21 +35,27 @@ ENV_STATUS = ENV_DEVELOPMENT
 # Application
 
 APP_NAME = 'backend'
-API = ('natalia', 1.0,)
-API_CURRENT = 1.0
-API_AVAILABLE = (API,)
 DOMAIN = 'localhost'
 PORT = 8000
 DEBUG = ENV_STATUS < ENV_STAGING
 TRACK = ENV_STATUS > ENV_DEVELOPMENT
 SSL = False
 CDN_PREFIX = None
-PREFORK_PROCESS = 0
+PREFORK_PROCESS = -1
 XSRF_COOKIE = False
 COOKIE_SECRET = 'S3cRe7+K3Y==='
 COOKIE_SESSION = 'sid'
 LOGIN_URL = '/auth/signin'
 LOGOUT_URL = '/auth/signout'
+
+
+# Api
+
+API = ('natalia', 1.0,)
+API_CURRENT = 1.0
+API_AVAILABLE = (API,)
+API_DOMAIN = 'localhost'
+API_PORT = 9000
 
 
 # Paths
@@ -88,7 +94,7 @@ STATIC_FILES = ()
 # Handlers
 
 HANDLERS_LIST = (
-    'backend.api.main',
+    'backend.api.public.main',
 )
 
 

@@ -12,7 +12,7 @@ import json
 import math
 import datetime
 from backend.common.utils import trace_error, camel_case_split, complex_types, \
-    str_to_bool
+    str_to_bool, domain
 from backend.security.sessions import SessionMixin
 from backend.tasks.tasks import push__track_activity
 from bson import json_util as json_mongo
@@ -106,6 +106,20 @@ class BaseHandler(RequestHandler, SessionMixin):
     _form = None
     _template = None
     _db_name = 'default'
+
+    def domain(self, protocol=None):
+        return domain(
+            self.settings.get('domain'),
+            self.settings.get('port'),
+            protocol
+        )
+
+    def api_domain(self, protocol=None):
+        return domain(
+            self.settings.get('api_domain'),
+            self.settings.get('api_port'),
+            protocol
+        )
 
     def _not_implemented(self):
         return self.get_json_error_response_and_finish(responses[404], 404)
@@ -362,12 +376,8 @@ class BaseHandler(RequestHandler, SessionMixin):
 
     def get_logic_low_args(self, available=None, enabled=None):
         return {
-            'available': str_to_bool(
-                self.get_argument('available', available)
-            ),
-            'enabled': str_to_bool(
-                self.get_argument('enabled', enabled)
-            )
+            'available': str_to_bool(self.get_argument('available', available)),
+            'enabled': str_to_bool(self.get_argument('enabled', enabled))
         }
 
     @property

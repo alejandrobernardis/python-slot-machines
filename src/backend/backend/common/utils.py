@@ -20,11 +20,6 @@ from importlib import import_module
 from itertools import izip
 
 
-def is_primitive(value):
-    return isinstance(value, (
-        complex, int, float, long, bool, str, basestring, unicode, tuple, list))
-
-
 def swallow_args(func):
     def decorator(value, *args, **kwargs):
         if not value:
@@ -32,6 +27,18 @@ def swallow_args(func):
         return func(value, *args, **kwargs)
     return decorator
 
+
+def is_primitive(value):
+    return isinstance(value, (
+        complex, int, float, long, bool, str, basestring, unicode, tuple, list))
+
+@swallow_args
+def domain(name, port=None, protocol=None):
+    if isinstance(protocol, basestring):
+        name = '%s://%s' % (protocol, name)
+    if isinstance(port, int):
+        name = '%s:%s' % (domain, port)
+    return name.lower()
 
 @swallow_args
 def unicode_to_str(value):

@@ -95,6 +95,11 @@ STATIC_FILES = ()
 
 HANDLERS_LIST = (
     'backend.api.public.main',
+    'backend.api.public.session',
+)
+
+PRIVATE_HANDLERS_LIST = (
+    'backend.api.private.sign',
 )
 
 

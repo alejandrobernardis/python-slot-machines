@@ -10,14 +10,24 @@ import os
 import copy
 import datetime
 import dateutil.parser
+import gzip
 import json
 import logging
 import traceback
+import collections
+import operator
 from backend.common.errors import ConfigurationError
 from backend.common.regex import rx_isoformat, rx_isoformat_date, \
     rx_isoformat_time, rx_camel_case_split
+from contextlib import closing
 from importlib import import_module
 from itertools import izip
+from tornado import escape
+
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 
 
 def swallow_args(func):
@@ -32,13 +42,15 @@ def is_primitive(value):
     return isinstance(value, (
         complex, int, float, long, bool, str, basestring, unicode, tuple, list))
 
+
 @swallow_args
 def domain(name, port=None, protocol=None):
     if isinstance(protocol, basestring):
         name = '%s://%s' % (protocol, name)
     if isinstance(port, int):
-        name = '%s:%s' % (domain, port)
+        name = '%s:%s' % (name, port)
     return name.lower()
+
 
 @swallow_args
 def unicode_to_str(value):
@@ -266,3 +278,112 @@ def import_by_path(dotted_path):
             'Module "%s" does not define a "%s" attribute/class' % (
                 module_path, class_name))
     return attr
+
+
+class DotDict(dict):
+    def __init__(self, value=None):
+        super(DotDict, self).__init__()
+        if value is None or isinstance(value, dict):
+            for key in value:
+                self.__setitem__(key, value[key])
+        else:
+            raise TypeError('Can only initialize DotDict from another dict')
+
+    def __setitem__(self, key, value):
+        if '.' in key:
+            my_key, rest_of_key = key.split('.', 1)
+            target = self.setdefault(my_key, DotDict())
+            if not isinstance(target, DotDict):
+                raise KeyError(
+                    'Cannot set "%s" in "%s" (%s)'
+                    % (rest_of_key, my_key, repr(target))
+                )
+            target[rest_of_key] = value
+        else:
+            if isinstance(value, dict) and not isinstance(value, DotDict):
+                value = DotDict(value)
+            dict.__setitem__(self, key, value)
+
+    def __getitem__(self, key):
+        if '.' not in key:
+            return dict.__getitem__(self, key)
+        my_key, rest_of_key = key.split('.', 1)
+        target = dict.__getitem__(self, my_key)
+        if not isinstance(target, DotDict):
+            raise KeyError(
+                'Cannot get "%s" in "%s" (%s)'
+                % (rest_of_key, my_key, repr(target))
+            )
+        return target[rest_of_key]
+
+    def __contains__(self, key):
+        if '.' not in key:
+            return dict.__contains__(self, key)
+        my_key, rest_of_key = key.split('.', 1)
+        if not dict.__contains__(self, my_key):
+            return False
+        target = dict.__getitem__(self, my_key)
+        if not isinstance(target, DotDict):
+            return False
+        return rest_of_key in target
+
+    def flatten(self):
+        new_dict = {}
+
+        def recurse_flatten(prefix, dd):
+            for k, v in dd.iteritems():
+                new_key = prefix + '.' + k if len(prefix) > 0 else k
+                if isinstance(v, DotDict):
+                    recurse_flatten(new_key, v)
+                else:
+                    new_dict[new_key] = v
+
+        recurse_flatten('', self)
+        return new_dict
+
+    def setdefault(self, key, default=None):
+        if key not in self:
+            self[key] = default
+        return self[key]
+
+    __setattr__ = __setitem__
+    __getattr__ = __getitem__
+
+
+class FrozenDict(collections.Mapping):
+    def __init__(self, *args, **kwargs):
+        self.__dict = dict(*args, **kwargs)
+        self.__hash = None
+
+    def __getitem__(self, key):
+        return self.__dict[key]
+
+    def copy(self, **add_or_replace):
+        return FrozenDict(self, **add_or_replace)
+
+    def __iter__(self):
+        return iter(self.__dict)
+
+    def __len__(self):
+        return len(self.__dict)
+
+    def __repr__(self):
+        return '<FrozenDict %s>' % repr(self.__dict)
+
+    def __hash__(self):
+        if self.__hash is None:
+            self.__hash = reduce(operator.xor, map(hash, self.iteritems()), 0)
+        return self.__hash
+
+
+def gzip_encode(s):
+    with closing(StringIO()) as sio:
+        with gzip.GzipFile(fileobj=sio, mode='wb') as gzfile:
+            gzfile.write(escape.utf8(s))
+        return sio.getvalue()
+
+
+def gzip_decode(s):
+    with closing(StringIO(s)) as sio:
+        with gzip.GzipFile(fileobj=sio, mode='rb') as gzfile:
+            return gzfile.read()

@@ -107,22 +107,7 @@ class BaseHandler(RequestHandler, SessionMixin):
     _template = None
     _db_name = 'default'
 
-    def domain(self, protocol=None):
-        return domain(
-            self.settings.get('domain'),
-            self.settings.get('port'),
-            protocol
-        )
-
-    def api_domain(self, protocol=None):
-        return domain(
-            self.settings.get('api_domain'),
-            self.settings.get('api_port'),
-            protocol
-        )
-
-    def _not_implemented(self):
-        return self.get_json_error_response_and_finish(responses[404], 404)
+    # methods
 
     def head(self, *args, **kwargs):
         self._not_implemented()
@@ -145,6 +130,11 @@ class BaseHandler(RequestHandler, SessionMixin):
     def options(self, *args, **kwargs):
         self._not_implemented()
 
+    def _not_implemented(self):
+        self.get_json_error_response_and_finish(responses[404], 404)
+
+    # time
+
     def now(self, time_zone=None):
         return datetime.datetime.now(time_zone)
 
@@ -157,6 +147,8 @@ class BaseHandler(RequestHandler, SessionMixin):
     def utc_now_delta(self, **kwargs):
         return self.utc_now() + datetime.timedelta(**kwargs)
 
+    # ops
+
     @property
     def track(self):
         return self.settings.get('track', False)
@@ -164,6 +156,8 @@ class BaseHandler(RequestHandler, SessionMixin):
     @property
     def debug(self):
         return self.settings.get('debug', False)
+
+    # template & forms
 
     @property
     def template(self):
@@ -201,6 +195,8 @@ class BaseHandler(RequestHandler, SessionMixin):
             template_name = self.template
         super(BaseHandler, self).render(template_name, **kwargs)
 
+    # server
+
     @property
     def remote_ip(self):
         try:
@@ -209,12 +205,19 @@ class BaseHandler(RequestHandler, SessionMixin):
             ip = self.request.remote_ip
         return self.request.headers.get('X-Forwarded-For', ip)
 
-    def paginate(self, page_number=0, page_size=50, total=0):
-        return Paginator(page_number, self.paginate_size(page_size), total)
+    def domain(self, protocol=None):
+        return domain(
+            self.settings.get('domain'),
+            self.settings.get('port') if self.debug else None,
+            protocol
+        )
 
-    def paginate_size(self, size=50):
-        size = int(size)
-        return size if int(size) < 200 else 200
+    def api_domain(self, protocol=None):
+        return domain(
+            self.settings.get('api_domain'),
+            self.settings.get('api_port') if self.debug else None,
+            protocol
+        )
 
     def validate_arguments(self, *args):
         if not args:
@@ -222,12 +225,30 @@ class BaseHandler(RequestHandler, SessionMixin):
         if not args or not all(args):
             raise ValueError('Arguments (!)')
 
+    def get_query_fields(self, fields=None):
+        if fields is None:
+            fields = self.get_argument(
+                'fields', self.get_argument('field', None))
+        if isinstance(fields, (basestring, str)) and fields:
+            if fields.endswith(','):
+                fields = fields[:-1]
+            return fields.split(',')
+        if isinstance(fields, (tuple, list)):
+            return [field for field in fields
+                    if isinstance(field, basestring) and field]
+        return None
+
+    def get_query_logic_low(self, available=None, enabled=None):
+        def _helper(name, default):
+            return str_to_bool(self.get_argument(name, default))
+        return {
+            'available': _helper('available', available),
+            'enabled': _helper('enabled', enabled)
+        }
+
     @property
     def root_url(self):
         return self.settings.get('site_root', '/')
-
-    def goto_root(self):
-        self.redirect(self.root_url)
 
     @property
     def next_url(self):
@@ -237,8 +258,22 @@ class BaseHandler(RequestHandler, SessionMixin):
             )
         )
 
+    def goto_root(self):
+        self.redirect(self.root_url)
+
     def goto_next(self):
         self.redirect(self.next_url)
+
+    # paginator
+
+    def paginate(self, page_number=0, page_size=50, total=0):
+        return Paginator(page_number, self.paginate_size(page_size), total)
+
+    def paginate_size(self, size=50):
+        size = int(size)
+        return size if size < 200 else 200
+
+    # database
 
     @property
     def db(self):
@@ -251,7 +286,7 @@ class BaseHandler(RequestHandler, SessionMixin):
     def db_name(self):
         return self._db_name
 
-    # Response
+    # json
 
     def get_json_body(self):
         try:
@@ -340,13 +375,16 @@ class BaseHandler(RequestHandler, SessionMixin):
         trace_error(self.request.arguments)
         return self.get_json_error_response_and_finish(message, eid)
 
+    # locale
+
     @property
     def locale_default(self):
         return self.settings.get('locale_default')
 
     def get_browser_locale(self, default=None):
         return super(BaseHandler, self).get_browser_locale(
-            default or self.locale_default)
+            default or self.locale_default
+        )
 
     def get_user_locale(self):
         try:
@@ -354,31 +392,15 @@ class BaseHandler(RequestHandler, SessionMixin):
         except:
             return self.locale_default
 
+    # user
+
     def get_current_user(self):
         try:
             return self.session.data
         except:
             return {}
 
-    def get_fields(self, fields=None):
-        if fields is None:
-            fields = self.get_argument(
-                'fields', self.get_argument('field', None)
-            )
-        if isinstance(fields, basestring) and fields:
-            if fields.endswith(','):
-                fields = fields[:-1]
-            return fields.split(',')
-        if isinstance(fields, (tuple, list)):
-            return [field for field in fields
-                    if isinstance(field, basestring) and field]
-        return None
-
-    def get_logic_low_args(self, available=None, enabled=None):
-        return {
-            'available': str_to_bool(self.get_argument('available', available)),
-            'enabled': str_to_bool(self.get_argument('enabled', enabled))
-        }
+    # audit
 
     @property
     def _session_audit_object(self):
@@ -423,3 +445,11 @@ class BaseHandler(RequestHandler, SessionMixin):
             message = exc_value.message
         kwargs['arguments'] = self.request.arguments
         self.push_audit('exception.%s' % level, activity, message, **kwargs)
+
+    def trace_request(self):
+        print '\nHEADER', self.request.headers, '\n---\n'
+        print '\nARGS', self.request.arguments
+        print '\nQUERY', self.request.query
+        print '---', self.request.query_arguments
+        print '\nBODY', self.request.body
+        print '---', self.request.body_arguments

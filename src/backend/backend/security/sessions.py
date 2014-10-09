@@ -20,6 +20,7 @@ __all__ = (
 )
 
 
+SESSION_NAME = 'sid'
 SESSION_EXPIRE = 60 * 20
 
 
@@ -66,7 +67,17 @@ def verify_session(method):
     def wrapper(self, *args, **kwargs):
         if not self.session_verify():
             return \
-                self.get_json_error_response_and_finish('SESSION EXPIRED', -1)
+                self.get_json_error_response_and_finish('EXPIRED SESSION', -1)
+        return method(self, *args, **kwargs)
+    return wrapper
+
+
+def verify_not_session(method):
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        if self.session_verify():
+            return \
+                self.get_json_error_response_and_finish('ACTIVE SESSION', -2)
         return method(self, *args, **kwargs)
     return wrapper
 
@@ -163,7 +174,7 @@ class SessionMixin(object):
 
     @property
     def session_id(self):
-        for func in ('get_argument', 'get_secure_cookie'):
+        for func in ('get_argument', 'get_secure_cookie',):
             if not hasattr(self, func):
                 continue
             sid = getattr(self, func)(self.session_cookie_name)
@@ -174,14 +185,27 @@ class SessionMixin(object):
 
     @property
     def session_cookie_name(self):
-        return getattr(self, 'settings', {}).get('cookie_session', 'sid')
+        return getattr(self, 'settings', {}).get('cookie_session', SESSION_NAME)
 
-    def session_start(self, data):
-        raise NotImplementedError()
+    @verify_not_session
+    def session_start(self, data, expires=None):
+        sid = None
+        if not isinstance(data, dict):
+            for func in ('todict', 'to_dict', 'topython', 'to_python',
+                         'tojson', 'to_json', 'toobject', 'to_object',):
+                if not hasattr(data, func):
+                    continue
+                data = getattr(data, func)()
+                if not isinstance(data, dict):
+                    raise SessionError('Invalid session data, must be a dict.')
+        self.session.force_save(data, sid, expires, True)
+        return sid
 
     @verify_session
     def session_destroy(self):
-        raise NotImplementedError()
+        sid = self.session_id
+        self.session.revoke()
+        return sid
 
     def session_validate(self):
         sid = self.session_id

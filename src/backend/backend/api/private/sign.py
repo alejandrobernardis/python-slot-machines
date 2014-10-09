@@ -7,19 +7,23 @@
 # Created: 07/Oct/2014 7:23 PM
 
 from backend.api.base import BaseHandler
+# from backend.security.sessions import verify_session, verify_not_session
 
 
 class SignInHandler(BaseHandler):
+    # @verify_session
     def get(self, *args, **kwargs):
         self.get_json_response_and_finish('~~GET~~')
 
+    # @verify_not_session
     def post(self, *args, **kwargs):
         self.get_json_response_and_finish('~~POST~~')
 
 
 class SignOutHandler(BaseHandler):
+    # @verify_session
     def delete(self, *args, **kwargs):
-        pass
+        self.get_json_response_and_finish('~~DELETE~~')
 
 
 handlers_list = [

@@ -7,6 +7,7 @@
 # Created: 23/Sep/2014 6:08 AM
 
 import copy
+import uuid
 from backend.common.errors import ConfigurationError, SessionError
 from backend.common.storage import KeyValueClientFactory
 from functools import wraps
@@ -191,7 +192,7 @@ class SessionMixin(object):
 
     @verify_not_session
     def session_start(self, data, expires=None):
-        sid = None
+        sid = str(uuid.uuid4())
         if not isinstance(data, dict):
             for func in ('todict', 'to_dict', 'topython', 'to_python',
                          'tojson', 'to_json', 'toobject', 'to_object',):
@@ -201,6 +202,8 @@ class SessionMixin(object):
                 if not isinstance(data, dict):
                     raise SessionError('Invalid session data, must be a dict.')
         self.session.force_save(data, sid, expires, True)
+        if hasattr(self, 'request'):
+            getattr(self, 'request').arguments['sid'] = [sid]
         return sid
 
     @verify_session

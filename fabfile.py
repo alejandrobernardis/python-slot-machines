@@ -7,8 +7,9 @@
 # Created: 08/Oct/2014 10:22 AM
 
 import os
-import sys
 
+BACKEND_PORT = 8000
+BACKEND_API_PORT = 9000
 ROOT_PATH = os.path.abspath(os.path.dirname(__file__))
 LIBRARY_PATH = os.path.join(ROOT_PATH, '/Volumes/Projects/library/python/2.7')
 DATA_LIB_PATH = os.path.join(ROOT_PATH, 'lib')
@@ -16,13 +17,10 @@ DATA_SRC_PATH = os.path.join(ROOT_PATH, 'src/backend')
 PYTHON_PATH = '$PYTHONPATH:%s:%s:%s' \
               % (LIBRARY_PATH, DATA_LIB_PATH, DATA_SRC_PATH)
 
-sys.path.append(LIBRARY_PATH)
-sys.path.append(DATA_LIB_PATH)
-
 from fabric.api import *
 
 
-def _start(background=False, port=8000):
+def _start(background=False, port=BACKEND_PORT):
     with lcd(DATA_SRC_PATH):
         with shell_env(PYTHONPATH=PYTHON_PATH):
             command = 'python2.7 -m server --port=%s' % port
@@ -33,23 +31,23 @@ def _start(background=False, port=8000):
             local(command)
 
 
-def _stop(port=8000):
+def _stop(port=BACKEND_PORT):
     pid = open('/tmp/backend.%s.pid' % port).read().replace('\n', '')
     local('kill -9 %s %s' % (pid, int(pid)+1))
 
 
-def _tail(port=8000):
+def _tail(port=BACKEND_PORT):
     local('tail -f /tmp/backend.%s.log' % port)
 
 
 @task
 def start_backend(background=False):
-    _start(background, 8000)
+    _start(background)
 
 
 @task
 def start_backend_api(background=False):
-    _start(background, 9000)
+    _start(background, BACKEND_API_PORT)
 
 
 @task
@@ -60,12 +58,12 @@ def start_all():
 
 @task
 def stop_backend():
-    _stop(8000)
+    _stop()
 
 
 @task
 def stop_backend_api():
-    _stop(9000)
+    _stop(BACKEND_API_PORT)
 
 
 @task
@@ -76,12 +74,12 @@ def stop_all():
 
 @task
 def tail_backend():
-    _tail(8000)
+    _tail()
 
 
 @task
 def tail_backend_api():
-    _tail(9000)
+    _tail(BACKEND_API_PORT)
 
 
 @task

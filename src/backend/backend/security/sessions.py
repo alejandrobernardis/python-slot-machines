@@ -7,13 +7,13 @@
 # Created: 23/Sep/2014 6:08 AM
 
 import copy
-from backend.common.errors import ConfigurationError
+from backend.common.errors import ConfigurationError, SessionError
 from backend.common.storage import KeyValueClientFactory
 from functools import wraps
 
 __all__ = (
-    'verify_key',
-    'verify_key_type',
+    'validate_has_key',
+    'validate_key_type',
     'Session',
     'SessionMixin',
     'SESSION_EXPIRE'
@@ -23,7 +23,7 @@ __all__ = (
 SESSION_EXPIRE = 60 * 20
 
 
-def verify_key(method):
+def validate_has_key(method):
     @wraps(method)
     def wrapper(self, *args, **kwargs):
         if not self.has(args[0]):
@@ -32,7 +32,7 @@ def verify_key(method):
     return wrapper
 
 
-def verify_key_type(method):
+def validate_key_type(method):
     @wraps(method)
     def wrapper(self, *args, **kwargs):
         if not isinstance(args[0], (basestring, int,)):
@@ -41,7 +41,7 @@ def verify_key_type(method):
     return wrapper
 
 
-def verify_value_type(method):
+def validate_value_type(method):
     @wraps(method)
     def wrapper(self, *args, **kwargs):
         if not isinstance(args[0], dict):
@@ -49,6 +49,24 @@ def verify_value_type(method):
         keys = args[0].keys()
         if not keys or not all(isinstance(i, (basestring, int)) for i in keys):
             raise TypeError('Invalid key, must be a basestring or integer')
+        return method(self, *args, **kwargs)
+    return wrapper
+
+
+def validate_session(method):
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        self.session_validate()
+        return method(self, *args, **kwargs)
+    return wrapper
+
+
+def verify_session(method):
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        if not self.session_verify():
+            return \
+                self.get_json_error_response_and_finish('SESSION EXPIRED', -1)
         return method(self, *args, **kwargs)
     return wrapper
 
@@ -88,7 +106,7 @@ class Session(object):
     def time_expires(self):
         return self._settings.get('expires', SESSION_EXPIRE)
 
-    @verify_key
+    @validate_has_key
     def get(self, key, default=None):
         return self.data.get(key, default)
 
@@ -98,7 +116,7 @@ class Session(object):
     def update(self, values, expires=None):
         self.save(values, expires)
 
-    @verify_key
+    @validate_has_key
     def delete(self, key, expires=None):
         data = self.data
         del data[key]
@@ -113,7 +131,7 @@ class Session(object):
     def revoke(self):
         self._client.delete(self.sid)
 
-    @verify_key_type
+    @validate_key_type
     def has(self, key):
         return key in self.data
     __contains__ = has
@@ -121,7 +139,7 @@ class Session(object):
     def save(self, value, expires=None, ignore_value=False):
         self.force_save(value, self.sid, expires, ignore_value)
 
-    @verify_value_type
+    @validate_value_type
     def force_save(self, value, sid, expires=None, ignore_value=False):
         if not ignore_value:
             data = self.data
@@ -145,11 +163,18 @@ class SessionMixin(object):
 
     @property
     def session_id(self):
-        raise NotImplementedError()
+        for func in ('get_argument', 'get_secure_cookie'):
+            if not hasattr(self, func):
+                continue
+            sid = getattr(self, func)(self.session_cookie_name)
+            if not sid:
+                continue
+            return str(sid)
+        raise SessionError('Session ID not found')
 
     @property
     def session_cookie_name(self):
-        raise NotImplementedError()
+        return getattr(self, 'settings', {}).get('cookie_session', 'sid')
 
     def session_start(self, data):
         raise NotImplementedError()

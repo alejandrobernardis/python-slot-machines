@@ -43,7 +43,7 @@ SSL = False
 CDN_PREFIX = None
 PREFORK_PROCESS = -1
 XSRF_COOKIE = False
-COOKIE_SECRET = 'S3cRe7+K3Y==='
+COOKIE_SECRET = None
 COOKIE_SESSION = 'sid'
 LOGIN_URL = '/auth/signin'
 LOGOUT_URL = '/auth/signout'
@@ -95,7 +95,7 @@ STATIC_FILES = ()
 
 HANDLERS_LIST = (
     'backend.api.public.main',
-    'backend.api.public.session',
+    'backend.api.public.services',
 )
 
 PRIVATE_HANDLERS_LIST = (

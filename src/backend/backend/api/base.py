@@ -361,7 +361,7 @@ class BaseHandler(RequestHandler, SessionMixin):
 
     def get_json_error_response_and_finish(self, message, eid=1000):
         if not isinstance(message, basestring):
-            message = getattr(message, 'message', str(message))
+            message = getattr(message, 'message', str(message)) or str(message)
             eid = getattr(message, 'code', eid)
         self.push_error_audit(
             message, level='error' if eid < 2000 else 'critical')
@@ -445,11 +445,3 @@ class BaseHandler(RequestHandler, SessionMixin):
             message = exc_value.message
         kwargs['arguments'] = self.request.arguments
         self.push_audit('exception.%s' % level, activity, message, **kwargs)
-
-    def trace_request(self):
-        print '\nHEADER', self.request.headers, '\n---\n'
-        print '\nARGS', self.request.arguments
-        print '\nQUERY', self.request.query
-        print '---', self.request.query_arguments
-        print '\nBODY', self.request.body
-        print '---', self.request.body_arguments

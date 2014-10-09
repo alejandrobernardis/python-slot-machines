@@ -10,14 +10,11 @@ from backend.api.base import BaseHandler
 
 
 class SignInHandler(BaseHandler):
-    def prepare(self):
-        self.trace_request()
-
     def get(self, *args, **kwargs):
-        self.get_json_response_and_finish('...')
+        self.get_json_response_and_finish('~~GET~~')
 
     def post(self, *args, **kwargs):
-        self.get_json_response_and_finish('...')
+        self.get_json_response_and_finish('~~POST~~')
 
 
 class SignOutHandler(BaseHandler):

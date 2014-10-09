@@ -9,3 +9,7 @@
 
 class ConfigurationError(Exception):
     pass
+
+
+class SessionError(Exception):
+    pass

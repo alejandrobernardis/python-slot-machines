@@ -12,10 +12,12 @@ from backend.common.storage import KeyValueClientFactory
 from functools import wraps
 
 __all__ = (
-    'validate_has_key',
-    'validate_key_type',
+    'validate_session',
+    'verify_session',
+    'verify_not_session',
     'Session',
     'SessionMixin',
+    'SESSION_NAME',
     'SESSION_EXPIRE'
 )
 

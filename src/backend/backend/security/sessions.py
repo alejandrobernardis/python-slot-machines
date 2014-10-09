@@ -179,11 +179,20 @@ class SessionMixin(object):
     def session_start(self, data):
         raise NotImplementedError()
 
+    @verify_session
     def session_destroy(self):
         raise NotImplementedError()
 
     def session_validate(self):
-        raise NotImplementedError()
+        sid = self.session_id
+        if self.session.is_empty:
+            raise SessionError('Session ID "%s" has expired.' % sid)
+        elif self.session.get('sid') != sid:
+            raise SessionError('Session ID "%s" does not match.' % sid)
+        return True
 
     def session_verify(self):
-        raise NotImplementedError()
+        try:
+            return self.session_validate()
+        except Exception:
+            return False

@@ -7,18 +7,40 @@
 # Created: 07/Oct/2014 7:23 PM
 
 from backend.api.base import BaseHandler
+from backend.common.errors import SchemaError
+from backend.models.requests import SignIn, SignOut
 
 
 class SignInHandler(BaseHandler):
-    def get(self, *args, **kwargs):
-        self.get_json_response_and_finish('~~GET~~')
+    _schema = SignIn
 
-    def post(self, *args, **kwargs):
-        self.get_json_response_and_finish('~~POST~~')
+    def get(self, *args, **kwargs):
+        try:
+            schema, validate = self.validate_schema()
+            if not validate:
+                raise SchemaError(schema._errors)
+            self.get_json_response_and_finish()
+        except SchemaError, e:
+            self.get_json_error_response_and_finish(e)
+        except Exception, e:
+            self.get_json_exception_response_and_finish(e)
+
+    def post(self, uid, *args, **kwargs):
+        try:
+            schema, validate = self.validate_schema()
+            if not validate:
+                raise SchemaError(schema._errors)
+            self.get_json_response_and_finish()
+        except SchemaError, e:
+            self.get_json_error_response_and_finish(e)
+        except Exception, e:
+            self.get_json_exception_response_and_finish(e)
 
 
 class SignOutHandler(BaseHandler):
-    def delete(self, *args, **kwargs):
+    _schema = SignOut
+
+    def delete(self, sid, *args, **kwargs):
         self.get_json_response_and_finish('~~DELETE~~')
 
 

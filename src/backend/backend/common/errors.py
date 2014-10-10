@@ -7,7 +7,15 @@
 # Created: 23/Sep/2014 7:26 AM
 
 
+class FormError(Exception):
+    pass
+
+
 class ConfigurationError(Exception):
+    pass
+
+
+class SchemaError(Exception):
     pass
 
 

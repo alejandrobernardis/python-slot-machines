@@ -208,6 +208,10 @@ class BaseHandler(RequestHandler, SessionMixin):
             schema = self.schema
         return schema() if without_arguments else schema(self, **kwargs)
 
+    def validate_schema(self, schema=None, **kwargs):
+        schema = self.get_schema(schema, False, **kwargs)
+        return schema, schema.validate()
+
     # server
 
     @property
@@ -374,7 +378,7 @@ class BaseHandler(RequestHandler, SessionMixin):
 
     def get_json_error_response_and_finish(self, message, eid=1000):
         if not isinstance(message, basestring):
-            message = getattr(message, 'message', str(message)) or str(message)
+            message = getattr(message, 'message') or str(message) or 'critical'
             eid = getattr(message, 'code', eid)
         self.push_error_audit(
             message, level='error' if eid < 2000 else 'critical')

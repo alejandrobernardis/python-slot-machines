@@ -12,6 +12,8 @@ from tornado.web import RequestHandler
 
 
 class RequestModel(Model):
+    _errors = None
+
     def __init__(self, raw_data=None, deserialize_mapping=None, strict=True):
         data = {}
         if isinstance(raw_data, RequestHandler):
@@ -22,6 +24,14 @@ class RequestModel(Model):
                 data[key] = value[0] if len(value) == 1 else value
         super(RequestModel, self)\
             .__init__(data or None, deserialize_mapping, strict)
+
+    def validate(self, partial=False, strict=False):
+        try:
+            super(RequestModel, self).validate(partial, strict)
+            return True
+        except Exception, e:
+            self._errors = getattr(e, 'messages')
+            return False
 
 
 class SignIn(RequestModel):

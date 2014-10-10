@@ -7,8 +7,7 @@
 # Created: 24/Sep/2014 4:01 AM
 
 from functools import wraps
-from werkzeug.security import generate_password_hash
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 
 __all__ = (
@@ -20,7 +19,7 @@ __all__ = (
 )
 
 
-MAXIMUM_PASSWORD_LENGTH = 4096
+MAXIMUM_PASSWORD_LENGTH = 128
 MINIMUM_PASSWORD_LENGTH = 8
 
 
@@ -31,8 +30,9 @@ def validate_password(length):
             password_len = len(password)
             if password_len < length or password_len > MAXIMUM_PASSWORD_LENGTH:
                 raise ValueError(
-                    'Invalid password, must be greater than or equal to %s'
-                    % length
+                    'Invalid Password, must be greater than or equal to %s '
+                    'or less than or equal to %s'
+                    % (length, MAXIMUM_PASSWORD_LENGTH)
                 )
             return fn(self, password, *args, **kwargs)
         return wrapper
@@ -43,10 +43,8 @@ class _PasswordHasher(object):
     _algorithm = None
 
     @validate_password(MINIMUM_PASSWORD_LENGTH)
-    def make(self, password, salt=None):
-        if not isinstance(salt, int):
-            salt = 8
-        return generate_password_hash(password, self._algorithm, salt)
+    def make(self, password, salt_length=8):
+        return generate_password_hash(password, self._algorithm, salt_length)
 
     @validate_password(MINIMUM_PASSWORD_LENGTH)
     def verify(self, password, password_hash):

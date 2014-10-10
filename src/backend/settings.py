@@ -93,7 +93,7 @@ STATIC_FILES = ()
 
 # Handlers
 
-HANDLERS_LIST = (
+PUBLIC_HANDLERS_LIST = (
     'backend.api.public.main',
     'backend.api.public.services',
 )
@@ -101,6 +101,8 @@ HANDLERS_LIST = (
 PRIVATE_HANDLERS_LIST = (
     'backend.api.private.sign',
 )
+
+HELPER_HANDLERS_LIST = ()
 
 
 # Modules (('ModuleName', 'ModulePath.ModuleClass'))

@@ -84,7 +84,7 @@ def str_to_bool(value):
     value = value.lower()
     if value in ('true', 'si', 'oui', 'yes'):
         return True
-    elif value in ('false', 'no', 'non'):
+    elif value in ('false', 'no', 'non', 'not'):
         return False
     return None
 

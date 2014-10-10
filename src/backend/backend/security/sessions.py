@@ -192,15 +192,16 @@ class SessionMixin(object):
 
     @verify_not_session
     def session_start(self, data, expires=None):
-        sid = str(uuid.uuid4())
         if not isinstance(data, dict):
-            for func in ('todict', 'to_dict', 'topython', 'to_python',
-                         'tojson', 'to_json', 'toobject', 'to_object',):
+            for func in ('to_dict', 'to_python', 'to_object', 'to_json',):
                 if not hasattr(data, func):
                     continue
                 data = getattr(data, func)()
-                if not isinstance(data, dict):
-                    raise SessionError('Invalid session data, must be a dict.')
+                if isinstance(data, dict):
+                    break
+            if not isinstance(data, dict):
+                raise SessionError('Invalid session data, must be a dict.')
+        sid = str(uuid.uuid4()).replace('-', '')
         self.session.force_save(data, sid, expires, True)
         if hasattr(self, 'request'):
             getattr(self, 'request').arguments['sid'] = [sid]
@@ -223,5 +224,5 @@ class SessionMixin(object):
     def session_verify(self):
         try:
             return self.session_validate()
-        except Exception:
+        except:
             return False

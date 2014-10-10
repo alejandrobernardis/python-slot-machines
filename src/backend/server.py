@@ -52,10 +52,13 @@ class MainApplication(Application):
                 'path': settings.STATIC_PATH
             }))
 
-        _handler_list = list(settings.HANDLERS_LIST)
+        _handler_list = list(settings.PUBLIC_HANDLERS_LIST)
 
         if options.port > 8999:
             _handler_list.extend(settings.PRIVATE_HANDLERS_LIST)
+
+        if options.debug:
+            _handler_list.extend(settings.HELPER_HANDLERS_LIST)
 
         for item in _handler_list:
             try:

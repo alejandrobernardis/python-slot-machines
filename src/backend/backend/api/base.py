@@ -13,6 +13,7 @@ import math
 import datetime
 from backend.common.utils import trace_error, camel_case_split, complex_types, \
     str_to_bool, domain
+from backend.models.requests import RequestModel
 from backend.security.sessions import SessionMixin
 from backend.tasks.tasks import push__track_activity
 from bson import json_util as json_mongo
@@ -104,6 +105,7 @@ class Paginator(object):
 
 class BaseHandler(RequestHandler, SessionMixin):
     _form = None
+    _schema = None
     _template = None
     _db_name = 'default'
 
@@ -157,7 +159,7 @@ class BaseHandler(RequestHandler, SessionMixin):
     def debug(self):
         return self.settings.get('debug', False)
 
-    # template & forms
+    # template & models
 
     @property
     def template(self):
@@ -194,6 +196,17 @@ class BaseHandler(RequestHandler, SessionMixin):
         if not template_name:
             template_name = self.template
         super(BaseHandler, self).render(template_name, **kwargs)
+
+    @property
+    def schema(self):
+        if not self._schema or not issubclass(self._schema, RequestModel):
+            raise TypeError('Invalid schema, must be a RequestModel')
+        return self._schema
+
+    def get_schema(self, schema=None, without_arguments=False, **kwargs):
+        if not schema:
+            schema = self.schema
+        return schema() if without_arguments else schema(self, **kwargs)
 
     # server
 

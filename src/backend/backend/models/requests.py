@@ -33,6 +33,10 @@ class RequestModel(Model):
             self._errors = getattr(e, 'messages')
             return False
 
+    @property
+    def errors(self):
+        return self._errors
+
 
 class SignIn(RequestModel):
     footprint = StringType(required=True)

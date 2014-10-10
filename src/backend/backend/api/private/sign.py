@@ -18,7 +18,8 @@ class SignInHandler(BaseHandler):
         try:
             schema, validate = self.validate_schema()
             if not validate:
-                raise SchemaError(schema._errors)
+                raise SchemaError(schema.errors)
+
             self.get_json_response_and_finish()
         except SchemaError, e:
             self.get_json_error_response_and_finish(e)
@@ -29,7 +30,7 @@ class SignInHandler(BaseHandler):
         try:
             schema, validate = self.validate_schema()
             if not validate:
-                raise SchemaError(schema._errors)
+                raise SchemaError(schema.errors)
             self.get_json_response_and_finish()
         except SchemaError, e:
             self.get_json_error_response_and_finish(e)
@@ -41,7 +42,15 @@ class SignOutHandler(BaseHandler):
     _schema = SignOut
 
     def delete(self, sid, *args, **kwargs):
-        self.get_json_response_and_finish('~~DELETE~~')
+        try:
+            schema, validate = self.validate_schema()
+            if not validate:
+                raise SchemaError(schema.errors)
+            self.get_json_response_and_finish()
+        except SchemaError, e:
+            self.get_json_error_response_and_finish(e)
+        except Exception, e:
+            self.get_json_exception_response_and_finish(e)
 
 
 handlers_list = [

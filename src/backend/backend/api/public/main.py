@@ -12,8 +12,14 @@ from backend.api.base import BaseHandler
 class MainHandler(BaseHandler):
     def get(self, *args, **kwargs):
         self.get_json_response_and_finish({
-            'name': self.settings.get('app_name'),
-            'version': self.settings.get('app_version')
+            'server': {
+                'name': self.settings.get('app_name'),
+                'version': self.settings.get('app_version')
+            },
+            'api': {
+                'current': self.settings.get('api_current'),
+                'available': self.settings.get('api_available')
+            }
         })
 
 

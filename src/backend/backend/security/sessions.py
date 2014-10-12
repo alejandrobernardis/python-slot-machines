@@ -12,6 +12,7 @@ from backend.common.errors import ConfigurationError, SessionError
 from backend.common.regex import rx_sid_32
 from backend.common.storage import KeyValueClientFactory
 from functools import wraps
+from tornado.web import RequestHandler
 
 __all__ = (
     'validate_session',
@@ -176,22 +177,37 @@ class SessionMixin(object):
     def session(self):
         return self._session_maker()
 
-    def _get_sid_by_uri(self, *args, **kwargs):
+    def session_uri_id(self):
         try:
             uri = getattr(self, 'request').uri.split('?')[0].split('/')[-1]
-            return rx_sid_32.findall(uri)[0]
+            return str(rx_sid_32.findall(uri)[0])
         except:
-            return None
+            return False
+
+    def session_cookie_id(self, cookie_name=None):
+        try:
+            name = cookie_name or self.session_cookie_name
+            return str(getattr(self, 'get_secure_cookie')(name))
+        except:
+            return False
+
+    def session_argument_id(self, cookie_name=None):
+        try:
+            name = cookie_name or self.session_cookie_name
+            return str(getattr(self, 'get_argument')(name))
+        except:
+            return False
 
     @property
     def session_id(self):
-        for func in ('get_argument', 'get_secure_cookie', '_get_sid_by_uri',):
-            if not hasattr(self, func):
+        for func in ('session_uri_id', 'session_cookie_id',
+                     'session_argument_id',):
+            try:
+                sid = getattr(self, func)()
+                if rx_sid_32.match(sid):
+                    return sid
+            except:
                 continue
-            sid = getattr(self, func)(self.session_cookie_name)
-            if not sid:
-                continue
-            return str(sid)
         raise SessionError('Session ID not found')
 
     @property
@@ -202,16 +218,17 @@ class SessionMixin(object):
     def session_start(self, data, expires=None):
         if not isinstance(data, dict):
             for func in ('to_dict', 'to_python', 'to_object', 'to_json',):
-                if not hasattr(data, func):
+                try:
+                    data = getattr(data, func)()
+                    if isinstance(data, dict):
+                        break
+                except:
                     continue
-                data = getattr(data, func)()
-                if isinstance(data, dict):
-                    break
             if not isinstance(data, dict):
                 raise SessionError('Invalid session data, must be a dict.')
         sid = str(uuid.uuid4()).replace('-', '')
         self.session.force_save(data, sid, expires, True)
-        if hasattr(self, 'request'):
+        if isinstance(self, RequestHandler):
             getattr(self, 'request').arguments['sid'] = [sid]
         return sid
 

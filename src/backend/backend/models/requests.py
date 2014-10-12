@@ -19,9 +19,6 @@ class RequestModel(Model):
         if isinstance(raw_data, RequestHandler):
             for key in raw_data.request.arguments.keys():
                 data[key] = raw_data.get_argument(key)
-        elif isinstance(raw_data, dict):
-            for key, value in raw_data.items():
-                data[key] = value[0] if len(value) == 1 else value
         super(RequestModel, self)\
             .__init__(data or None, deserialize_mapping, strict)
 

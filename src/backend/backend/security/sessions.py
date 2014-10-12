@@ -9,6 +9,7 @@
 import copy
 import uuid
 from backend.common.errors import ConfigurationError, SessionError
+from backend.common.regex import rx_sid_32
 from backend.common.storage import KeyValueClientFactory
 from functools import wraps
 
@@ -175,9 +176,16 @@ class SessionMixin(object):
     def session(self):
         return self._session_maker()
 
+    def _get_sid_by_uri(self, *args, **kwargs):
+        try:
+            uri = getattr(self, 'request').uri.split('?')[0].split('/')[-1]
+            return rx_sid_32.findall(uri)[0]
+        except:
+            return None
+
     @property
     def session_id(self):
-        for func in ('get_argument', 'get_secure_cookie',):
+        for func in ('get_argument', 'get_secure_cookie', '_get_sid_by_uri',):
             if not hasattr(self, func):
                 continue
             sid = getattr(self, func)(self.session_cookie_name)

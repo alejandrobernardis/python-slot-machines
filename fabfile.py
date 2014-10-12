@@ -41,6 +41,21 @@ def _tail(port=BACKEND_PORT):
 
 
 @task
+def start_db(port=27017, domain='127.0.0.1', 
+        dbpath='/Volumes/Projects/data/db/default'):
+    command = '/Volumes/Projects/software/mongodb/2.6.3/bin/mongod ' \
+              '--port {0} --bind_ip {1} --dbpath {2} ' \
+              '--pidfilepath {2}/default.pid --logpath {2}/default.log ' \
+              '--oplogSize 128 --logappend --fork --journal --smallfiles'
+    local(command.format(port, domain, dbpath))
+
+
+@task
+def stop_db():
+    local('killall mongod')
+
+
+@task
 def start_backend(background=False):
     _start(background)
 
@@ -52,6 +67,7 @@ def start_backend_api(background=False):
 
 @task
 def start_all():
+    start_db()
     start_backend(True)
     start_backend_api(True)
 
@@ -68,6 +84,7 @@ def stop_backend_api():
 
 @task
 def stop_all():
+    stop_db()
     stop_backend()
     stop_backend_api()
 

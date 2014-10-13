@@ -76,7 +76,7 @@ handlers_list = [
     (r'/game/slot/(?P<sid>[a-z0-9]+)/?', ServiceHandler),
     (r'/store/android/(?P<sid>[a-z0-9]+)/?', ServiceHandler),
     (r'/store/ios/(?P<sid>[a-z0-9]+)/?', ServiceHandler),
-    (r'/pop/nags/(?P<sid>[a-z0-9]+)/?', ServiceHandler),
+    (r'/media/nags/(?P<sid>[a-z0-9]+)/?', ServiceHandler),
     (r'/social/sync/(?P<sid>[a-z0-9]+)/?', ServiceHandler),
     (r'/social/gift/request/(?P<sid>[a-z0-9]+)/?', ServiceHandler),
     (r'/social/gift/send/(?P<sid>[a-z0-9]+)/?', ServiceHandler),

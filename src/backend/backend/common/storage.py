@@ -12,6 +12,7 @@ from backend.common.utils import purge_settings, import_module, \
     import_by_path, complex_types, deserialize_complex_types, \
     serialize_complex_types
 from functools import wraps
+from motor import MotorReplicaSetClient, MotorClient
 from pymongo.common import validate
 from pymongo.mongo_client import MongoClient
 from pymongo.mongo_replica_set_client import MongoReplicaSetClient
@@ -19,8 +20,10 @@ from pymongo.mongo_replica_set_client import MongoReplicaSetClient
 __all__ = (
     'KeyValueClient',
     'KeyValueClientFactory',
-    'MemcachedReaderClient',
     'MemcachedClient',
+    'MemcachedReaderClient',
+    'RedisClient',
+    'RedisReaderClient',
     'nosql_database_connector'
 )
 
@@ -128,6 +131,14 @@ class KeyValueClientFactory(object):
     def _memcached_reader_client(settings, **kwargs):
         return MemcachedReaderClient(settings, **kwargs)
 
+    @staticmethod
+    def _redis_client(settings, **kwargs):
+        return RedisClient(settings, **kwargs)
+
+    @staticmethod
+    def _memcached_reader_client(settings, **kwargs):
+        return RedisReaderClient(settings, **kwargs)
+
 
 class MemcachedClient(KeyValueClient):
     _arguments = ('servers', 'behaviors', 'binary', 'username', 'password',)
@@ -163,22 +174,77 @@ class MemcachedReaderClient(MemcachedClient):
         super(MemcachedReaderClient, self).__init__(settings, serializer, True)
 
 
+class RedisClient(KeyValueClient):
+    _arguments = ('host', 'port', 'db', 'password', 'socket_timeout',
+                  'socket_connect_timeout', 'socket_keepalive',
+                  'socket_keepalive_options', 'connection_pool',
+                  'unix_socket_path', 'encoding', 'encoding_errors', 'charset',
+                  'errors', 'decode_responses', 'retry_on_timeout', 'ssl',
+                  'ssl_keyfile', 'ssl_certfile', 'ssl_cert_reqs',
+                  'ssl_ca_certs')
+
+    def __init__(self, settings, serializer='pickle', read_only=False):
+        if settings and 'engine' not in settings:
+            settings['engine'] = 'redis'
+        self._read_only = read_only
+        super(RedisClient, self).__init__(settings, serializer)
+
+    def _make_engine(self, *args, **kwargs):
+        path = 'redis.client.Redis'
+        try:
+            engine = import_by_path(path)
+            return engine(**purge_settings(self._settings, self._arguments))
+        except ImportError as e:
+            raise ConfigurationError('ImportError %s: %s' % (path, e.args[0]))
+
+    def _get(self, key):
+        return self._engine.get(key)
+
+    @is_read_only
+    def _save(self, key, value, expires):
+        self._engine.set(key, value, expires)
+
+    @is_read_only
+    def delete(self, key, *args):
+        return self._engine.delete(key, *args)
+
+
+class RedisReaderClient(RedisClient):
+    def __init__(self, settings, serializer='pickle'):
+        super(RedisReaderClient, self).__init__(settings, serializer, True)
+
+
 def nosql_database_connector(name, config, include=None):
+    if not include:
+        include = ('host', 'port', 'max_pool_size', 'document_class',
+                   'tz_aware', 'sockettimeoutms', 'connecttimeoutms',
+                   'waitqueuetimeoutms', 'waitqueuemultiple',
+                   'auto_start_request', 'use_greenlets', 'w', 'wtimeout',
+                   'j', 'fsync', 'replicaset', 'read_preference', 'tag_sets',
+                   'ssl', 'ssl_keyfile', 'ssl_certfile', 'ssl_cert_reqs',
+                   'ssl_ca_certs')
     if name not in config:
         raise ConfigurationError('Database %s not supported' % name)
     db_config = copy.deepcopy(config[name])
+    if not db_config.get('async', False):
+        _client, _replica_set_client = MongoClient, MongoReplicaSetClient
+    else:
+        _client, _replica_set_client = MotorClient, MotorReplicaSetClient
     db_name = db_config.get('name', 'test')
     db_settings = db_config.get('settings', {})
     for key, value in db_settings.items():
         try:
-            if not include or key not in include:
-                validate(key, value)
-        except:
+            if key not in include:
+                raise ConfigurationError()
+            validate(key, value)
+        except ConfigurationError:
             del db_settings[key]
+        except Exception, e:
+            raise ConfigurationError(e.message or str(e))
     if 'replicaset' not in db_settings:
-        client = MongoClient(**db_settings)
+        client = _client(**db_settings)
     else:
-        client = MongoReplicaSetClient(**db_settings)
+        client = _replica_set_client(**db_settings)
     database = client[db_name]
     db_username = db_config.get('username', False)
     db_password = db_config.get('password', False)

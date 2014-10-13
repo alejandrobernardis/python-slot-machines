@@ -177,21 +177,21 @@ class SessionMixin(object):
     def session(self):
         return self._session_maker()
 
-    def session_uri_id(self):
+    def _session_uri_id(self):
         try:
             uri = getattr(self, 'request').uri.split('?')[0].split('/')[-1]
             return str(rx_sid_32.findall(uri)[0])
         except:
             return False
 
-    def session_cookie_id(self, cookie_name=None):
+    def _session_cookie_id(self, cookie_name=None):
         try:
             name = cookie_name or self.session_cookie_name
             return str(getattr(self, 'get_secure_cookie')(name))
         except:
             return False
 
-    def session_argument_id(self, cookie_name=None):
+    def _session_arg_id(self, cookie_name=None):
         try:
             name = cookie_name or self.session_cookie_name
             return str(getattr(self, 'get_argument')(name))
@@ -200,8 +200,8 @@ class SessionMixin(object):
 
     @property
     def session_id(self):
-        for func in ('session_uri_id', 'session_cookie_id',
-                     'session_argument_id',):
+        methods = ('_session_uri_id', '_session_cookie_id', '_session_arg_id',)
+        for func in methods:
             try:
                 sid = getattr(self, func)()
                 if rx_sid_32.match(sid):

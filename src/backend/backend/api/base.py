@@ -192,11 +192,6 @@ class BaseHandler(RequestHandler, SessionMixin):
             kwargs['form'] = self.form()
         self.render(template_name, **kwargs)
 
-    def render(self, template_name=None, **kwargs):
-        if not template_name:
-            template_name = self.template
-        super(BaseHandler, self).render(template_name, **kwargs)
-
     @property
     def schema(self):
         if not self._schema or not issubclass(self._schema, RequestModel):
@@ -211,6 +206,16 @@ class BaseHandler(RequestHandler, SessionMixin):
     def validate_schema(self, schema=None, **kwargs):
         schema = self.get_schema(schema, False, **kwargs)
         return schema, schema.validate()
+
+    def render_schema(self, template_name=None, **kwargs):
+        if 'form' not in kwargs:
+            kwargs['schema'] = self.schema()
+        self.render(template_name, **kwargs)
+
+    def render(self, template_name=None, **kwargs):
+        if not template_name:
+            template_name = self.template
+        super(BaseHandler, self).render(template_name, **kwargs)
 
     # server
 

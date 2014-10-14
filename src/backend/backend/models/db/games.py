@@ -6,11 +6,11 @@
 # Email: alejandro (dot) bernardis (at) asumikamikaze (dot) com
 # Created: 14/Oct/2014 14:36
 
-from backend.models.db.profiles import SessionModel
+from backend.models.db.profiles import SessionData
 from schematics.types import IntType, FloatType, BooleanType
 
 
-class SlotModel(SessionModel):
+class SlotModel(SessionData):
     bet = FloatType(default=0)
     lines = IntType(default=0)
     games = IntType(default=0)

@@ -15,7 +15,7 @@ from backend.common.utils import trace_error, camel_case_split, complex_types, \
     str_to_bool, domain
 from backend.models.base import RequestModel
 from backend.security.sessions import SessionMixin
-from backend.tasks.tasks import push__track_activity
+from backend.background.tasks.track import push__track_activity
 from bson import json_util as json_mongo
 from functools import wraps
 from tornado.httputil import responses
@@ -467,7 +467,3 @@ class BaseHandler(RequestHandler, SessionMixin):
             message = exc_value.message
         kwargs['arguments'] = self.request.arguments
         self.push_audit('exception.%s' % level, activity, message, **kwargs)
-
-
-class ErrorHandler(BaseHandler):
-    pass

@@ -4,8 +4,5 @@
 # Licensed under the MIT License.
 # Author: Alejandro M. Bernardis
 # Email: alejandro (dot) bernardis (at) asumikamikaze (dot) com
-# Created: 23/Sep/2014 6:02 AM
+# Created: 14/Oct/2014 18:27
 
-
-def push__track_activity():
-    pass

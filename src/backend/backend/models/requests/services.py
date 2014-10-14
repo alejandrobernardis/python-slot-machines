@@ -10,7 +10,7 @@ from backend.models.base import RequestModel
 from schematics.types import StringType, IntType
 
 
-class SignIn(RequestModel):
+class SignInRequest(RequestModel):
     footprint = StringType(required=True)
     device = StringType()
     device_os = StringType()
@@ -22,5 +22,5 @@ class SignIn(RequestModel):
     client_version = StringType(required=True)
 
 
-class SignOut(SignIn):
+class SignOutRequest(SignInRequest):
     uid = StringType(required=True)

@@ -8,25 +8,21 @@
 
 from backend.api.base import BaseHandler
 from backend.common.errors import SchemaError
-from backend.models.requests.services import SignIn, SignOut
+from backend.models.requests.services import SignInRequest, SignOutRequest
 
 
 class SignInHandler(BaseHandler):
-    _schema = SignIn
+    _schema = SignInRequest
 
-    def get(self, uid, *args, **kwargs):
+    def post(self, uid, *args, **kwargs):
         """ New User """
         try:
             schema, validate = self.validate_schema()
-
             if not validate:
                 raise SchemaError(schema.errors)
-
             self.get_json_response_and_finish()
-
         except SchemaError, e:
             self.get_json_error_response_and_finish(e)
-
         except Exception, e:
             self.get_json_exception_response_and_finish(e)
 
@@ -44,7 +40,7 @@ class SignInHandler(BaseHandler):
 
 
 class SignOutHandler(BaseHandler):
-    _schema = SignOut
+    _schema = SignOutRequest
 
     def delete(self, sid, *args, **kwargs):
         try:

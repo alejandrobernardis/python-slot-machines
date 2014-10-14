@@ -9,10 +9,10 @@
 import datetime
 from backend.models.base import DocumentModel
 from schematics.types import StringType, IntType, FloatType, BooleanType, \
-    DateTimeType, DateType
+    DateTimeType
 
 
-class SessionModel(object):
+class SessionData(DocumentModel):
     sid = StringType(required=True)
     level = IntType(default=0)
     points = FloatType(default=0.0)
@@ -24,7 +24,7 @@ class SessionModel(object):
     award_finish_time = DateTimeType(default=None)
 
 
-class AISessionModel(SessionModel):
+class AISessionData(SessionData):
     start = DateTimeType(default=datetime.datetime.utcnow)
     start_level = IntType(default=0)
     start_points = FloatType(default=0.0)
@@ -32,7 +32,7 @@ class AISessionModel(SessionModel):
     start_awards = IntType(default=0)
 
 
-class ProfileModel(DocumentModel, SessionModel):
+class ProfileData(SessionData):
     uid = StringType(required=True)
     fbuid = StringType(required=True)
     token = StringType(required=True)
@@ -41,17 +41,8 @@ class ProfileModel(DocumentModel, SessionModel):
     rsa_private = StringType(required=True)
     last_login = DateTimeType(default=datetime.datetime.utcnow)
 
-    # lang = StringType(default=None)
-    # time_zone = IntType(default=0)
-    # country = IntType(default=None)
-    # first_name = StringType(default=None)
-    # last_name = StringType(default=None)
-    # email = StringType(default=None)
-    # birthday = DateType(default=None)
-    # genre = IntType(default=0)
 
-
-class DeviceModel(DocumentModel, SessionModel):
+class DeviceData(SessionData):
     uid = StringType(required=True)
     footprint = StringType(required=True)
     device = StringType(default=None)

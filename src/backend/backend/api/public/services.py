@@ -86,5 +86,5 @@ handlers_list = [
     (r'/session/(?P<sid>[a-z0-9]+)/?', ServiceHandler),
     (r'/session/balance/(?P<sid>[a-z0-9]+)/?', ServiceHandler),
     (r'/session/bonus/(?P<sid>[a-z0-9]+)/?', ServiceHandler),
-    (r'/session/slots/(?P<sid>[a-z0-9]+)/?', ServiceHandler),
+    (r'/session/slots/(?P<sid>[a-z0-9]+)/?', ServiceHandler)
 ]

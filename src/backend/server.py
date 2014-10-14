@@ -8,6 +8,7 @@
 
 import sys
 import settings
+from backend.api.base import BaseHandler
 from backend.common.errors import ConfigurationError
 from backend.common.storage import nosql_database_connector
 from backend.common.utils import import_by_path, import_module, verify_file, \
@@ -71,6 +72,8 @@ class MainApplication(Application):
                     'Module "%s" does not define a "%s" attribute' %
                     (item, 'handlers_list'))
             _handlers.extend(getattr(module, 'handlers_list'))
+
+        _handlers.append((r'/.+', BaseHandler))
 
         _ui_modules = {}
 

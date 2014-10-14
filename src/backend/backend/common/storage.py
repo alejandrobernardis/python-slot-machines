@@ -216,13 +216,12 @@ class RedisReaderClient(RedisClient):
 
 def nosql_database_connector(name, config, include=None):
     if not include:
-        include = ('host', 'port', 'max_pool_size', 'document_class',
-                   'tz_aware', 'sockettimeoutms', 'connecttimeoutms',
-                   'waitqueuetimeoutms', 'waitqueuemultiple',
-                   'auto_start_request', 'use_greenlets', 'w', 'wtimeout',
-                   'j', 'fsync', 'replicaset', 'read_preference', 'tag_sets',
-                   'ssl', 'ssl_keyfile', 'ssl_certfile', 'ssl_cert_reqs',
-                   'ssl_ca_certs')
+        include = ('replicaset', 'slaveok', 'slave_okay', 'safe', 'w',
+                   'wtimeout', 'wtimeoutms', 'fsync', 'j', 'journal',
+                   'connecttimeoutms', 'sockettimeoutms', 'waitqueuetimeoutms',
+                   'waitqueuemultiple', 'ssl', 'ssl_keyfile', 'ssl_certfile',
+                   'ssl_cert_reqs', 'ssl_ca_certs', 'readpreference',
+                   'read_preference', 'readpreferencetags', 'tag_sets',)
     if name not in config:
         raise ConfigurationError('Database %s not supported' % name)
     db_config = copy.deepcopy(config[name])

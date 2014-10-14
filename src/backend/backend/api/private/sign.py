@@ -14,7 +14,7 @@ from backend.models.requests.services import SignIn, SignOut
 class SignInHandler(BaseHandler):
     _schema = SignIn
 
-    def post(self, uid, *args, **kwargs):
+    def get(self, uid, *args, **kwargs):
         """ New User """
         try:
             schema, validate = self.validate_schema()

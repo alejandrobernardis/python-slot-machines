@@ -93,4 +93,3 @@ class DocumentModel(Model):
     modified = DateTimeType(default=datetime.datetime.utcnow)
     enabled = BooleanType(default=True)
     available = BooleanType(default=True)
-

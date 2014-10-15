@@ -21,6 +21,9 @@ PYTHON_PATH = '$PYTHONPATH:%s:%s:%s' \
               % (LIBRARY_PATH, DATA_LIB_PATH, DATA_SRC_PATH)
 
 
+################################################################################
+# helpers ----------------------------------------------------------------------
+
 def _start_server(background=False, port=BACKEND_PORT):
     with lcd(DATA_SRC_PATH):
         with shell_env(PYTHONPATH=PYTHON_PATH):
@@ -38,20 +41,44 @@ def _stop_server(port=BACKEND_PORT):
 
 
 def _tail_server(port=BACKEND_PORT):
-    local('tail -f /tmp/backend.%s.log' % port)
+    local('tail -f /tmp/backend.{port}.log'.format(port=port))
 
 
 def _start_db():
     config_file = os.path.join(ROOT_PATH, 'etc/mongodb.conf')
     path_dir = '/tmp/mongodb'
     if not os.path.isdir(path):
-        local('mkdir -p {path}'.format(path=path_dir))
+        local('mkdir -p {path_dir}'.format(path_dir=path_dir))
     local('mongod --config {config_file}'.format(config_file=config_file))
 
 
 def _stop_db():
     pid = rx_pid.findall(open('/tmp/mongodb.pid').read())[0]
     local('kill {pid}'.format(pid=pid))
+
+
+def _tail_db():
+    local('tail -f /tmp/mongodb.log')
+
+
+def _start_cache(server='memcached'):
+    if server.lower() == 'redis':
+        config_file = os.path.join(ROOT_PATH, 'etc/redis.conf')
+        path_dir = '/tmp/redis'
+        if not os.path.isdir(path):
+            local('mkdir -p {path_dir}'.format(path_dir=path_dir))
+        local('redis-server {config_file}'.format(config_file=config_file))
+    else:
+        config_file = os.path.join(ROOT_PATH, 'etc/memcached.conf')
+        local('memcached -d {config_file}'.format(config_file=config_file))
+
+
+def _stop_cache(server='memcached'):
+    if server.lower() == 'redis':
+        pid = rx_pid.findall(open('/tmp/redis.pid').read())[0]
+        local('kill {pid}'.format(pid=pid))
+    else:
+        local('killall memcached')
 
 
 def _start_celery(background=False, worker='backend.background.server',
@@ -72,6 +99,10 @@ def _stop_celery(worker='backend.background.server'):
     local('kill {pid}'.format(pid=pid))
 
 
+def _tail_celery(worker='backend.background.server'):
+    local('tail -f /tmp/celery.{worker}.log'.format(worker=worker))
+
+
 def _start_broker(background=False, options=''):
     if background:
         options += ' -detached'
@@ -82,33 +113,9 @@ def _stop_broker():
     pass
 
 
-def _start_cache(server='memcached'):
-    server = server.lower()
-    if server not in ('redis', 'memcached'):
-        raise ValueError('Server type not supported: %s' % server)
-    if server == 'redis':
-        config_file = os.path.join(ROOT_PATH, 'etc/redis.conf')
-        path_dir = '/tmp/redis'
-        if not os.path.isdir(path):
-            local('mkdir -p {path}'.format(path=path_dir))
-        local('redis-server {config_file}'.format(config_file=config_file))
-    else:
-        config_file = os.path.join(ROOT_PATH, 'etc/memcached.conf')
-        local('memcached -d {config_file}'.format(config_file=config_file))
+################################################################################
+# servers ----------------------------------------------------------------------
 
-
-def _stop_cache(server='memcached'):
-    server = server.lower()
-    if server not in ('redis', 'memcached'):
-        raise ValueError('Server type not supported: %s' % server)
-    if server == 'redis':
-        pid = rx_pid.findall(open('/tmp/redis.pid').read())[0]
-        local('kill {pid}'.format(pid=pid))
-    else:
-        local('killall memcached')
-
-
-# tasks ########################################################################
 
 @task
 def start_backend(background=False):
@@ -140,6 +147,9 @@ def tail_backend_api():
     _tail_server(BACKEND_API_PORT)
 
 
+# mongodb ----------------------------------------------------------------------
+
+
 @task
 def start_db():
     _start_db()
@@ -148,3 +158,44 @@ def start_db():
 @task
 def stop_db():
     _stop_db()
+
+
+@task
+def tail_db():
+    _tail_db()
+
+
+# redis/memcached --------------------------------------------------------------
+
+
+@task
+def start_cache():
+    _start_cache('redis')
+
+
+@task
+def stop_cache():
+    _stop_cache('redis')
+
+
+# celery -----------------------------------------------------------------------
+
+
+@task
+def start_tasks(background=False):
+    _start_broker()
+    _start_celery(background)
+
+
+@task
+def stop_tasks():
+    _stop_celery()
+    _stop_broker()
+
+
+@task
+def tail_tasks():
+    _tail_celery()
+
+
+################################################################################

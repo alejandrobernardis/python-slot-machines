@@ -47,7 +47,7 @@ def _tail_server(port=BACKEND_PORT):
 def _start_db():
     config_file = os.path.join(ROOT_PATH, 'etc/mongodb.conf')
     path_dir = '/tmp/mongodb'
-    if not os.path.isdir(path):
+    if not os.path.isdir(path_dir):
         local('mkdir -p {path_dir}'.format(path_dir=path_dir))
     local('mongod --config {config_file}'.format(config_file=config_file))
 
@@ -65,7 +65,7 @@ def _start_cache(server='memcached'):
     if server.lower() == 'redis':
         config_file = os.path.join(ROOT_PATH, 'etc/redis.conf')
         path_dir = '/tmp/redis'
-        if not os.path.isdir(path):
+        if not os.path.isdir(path_dir):
             local('mkdir -p {path_dir}'.format(path_dir=path_dir))
         local('redis-server {config_file}'.format(config_file=config_file))
     else:

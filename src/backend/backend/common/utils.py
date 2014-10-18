@@ -82,9 +82,9 @@ def safe_str_cmp(one, two):
 @swallow_args
 def str_to_bool(value):
     value = value.lower()
-    if value in ('true', 'si', 'oui', 'yes'):
+    if value in ('true', 'si', 'oui', 'yes', 'on', 't', '1'):
         return True
-    elif value in ('false', 'no', 'non', 'not'):
+    elif value in ('false', 'no', 'not', 'off', 'none', 'null', 'f', '0'):
         return False
     return None
 

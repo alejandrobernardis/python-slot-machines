@@ -6,12 +6,27 @@
 # Email: alejandro (dot) bernardis (at) asumikamikaze (dot) com
 # Created: 14/Oct/2014 18:31
 
-from backend.background.server import celery, celery_logging
+from backend.background.server import celery, celery_logging, celery_collection
+from backend.models.base import get_logic_low
+from tornado import gen
 
 
-@celery.task(ignore_result=True)
-def push__track_activity(*args, **kwargs):
+@gen.coroutine
+def track_activity(collection, activity, message, **kwargs):
     try:
-        return True
+        query = get_logic_low(kwargs)
+        query['activity'] = activity
+        query['message'] = message
+        response = yield celery_collection(collection, 'tracker')\
+            .insert(query, w=0, j=False)
+        raise gen.Return(response)
     except Exception, e:
-        return celery_logging(e)
+        celery_logging(e)
+
+
+@celery.task()
+def push__track_activity(collection, activity, message, **kwargs):
+    try:
+        yield track_activity(collection, activity, message, **kwargs)
+    except Exception, e:
+        celery_logging(e)

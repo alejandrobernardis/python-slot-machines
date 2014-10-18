@@ -32,7 +32,6 @@ class SessionData(DocumentModel):
     award_finish_time_value = IntType(default=0)
 
 
-
 class ProfileData(DocumentModel):
     puid = StringType(required=True)
     fbuid = StringType(required=True)

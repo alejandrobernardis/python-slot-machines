@@ -126,7 +126,7 @@ DATABASE = {
         'name': 'application',
         'username': None,
         'password': None,
-        'async': False,
+        'async': True,
         'settings': {
             'host': 'localhost',
             'port': 27017,
@@ -139,7 +139,7 @@ DATABASE = {
         'name': 'social',
         'username': None,
         'password': None,
-        'async': False,
+        'async': True,
         'settings': {
             'host': 'localhost',
             'port': 27017,
@@ -152,7 +152,7 @@ DATABASE = {
         'name': 'tracker',
         'username': None,
         'password': None,
-        'async': False,
+        'async': True,
         'settings': {
             'host': 'localhost',
             'port': 27017,

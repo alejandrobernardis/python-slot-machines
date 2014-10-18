@@ -62,23 +62,17 @@ def _tail_db():
 
 
 def _start_cache(server='memcached'):
-    if server.lower() == 'redis':
-        config_file = os.path.join(ROOT_PATH, 'etc/redis.conf')
-        path_dir = '/tmp/redis'
-        if not os.path.isdir(path_dir):
-            local('mkdir -p {path_dir}'.format(path_dir=path_dir))
-        local('redis-server {config_file}'.format(config_file=config_file))
-    else:
-        config_file = os.path.join(ROOT_PATH, 'etc/memcached.conf')
-        local('memcached -d {config_file}'.format(config_file=config_file))
+    config_file = os.path.join(ROOT_PATH, 'etc/redis.conf')
+    path_dir = '/tmp/redis'
+    if not os.path.isdir(path_dir):
+        local('mkdir -p {path_dir}'.format(path_dir=path_dir))
+    local('redis-server {config_file}'.format(config_file=config_file))
+
 
 
 def _stop_cache(server='memcached'):
-    if server.lower() == 'redis':
-        pid = rx_pid.findall(open('/tmp/redis.pid').read())[0]
-        local('kill {pid}'.format(pid=pid))
-    else:
-        local('killall memcached')
+    pid = rx_pid.findall(open('/tmp/redis.pid').read())[0]
+    local('kill {pid}'.format(pid=pid))
 
 
 def _start_celery(background=False, worker='backend.background.server',
@@ -170,12 +164,12 @@ def tail_db():
 
 @task
 def start_cache():
-    _start_cache('redis')
+    _start_cache()
 
 
 @task
 def stop_cache():
-    _stop_cache('redis')
+    _stop_cache()
 
 
 # celery -----------------------------------------------------------------------
